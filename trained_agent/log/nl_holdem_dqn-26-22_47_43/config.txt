@@ -1,0 +1,15 @@
+env: no-limit-holdem
+algorithm: dqn
+cuda: 
+seed: 42
+num_episodes: 100000
+num_games: 2000
+evaluate_every: 5000
+log_dir: log/nl_holdem_dqn-26-22_47_43
+init: True
+play: False
+epsilon_decay_steps: 0.5
+update_target_estimator_every: 5000
+mlp_shape: [128]
+switched model 2 times:
+[0, 55000]
