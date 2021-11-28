@@ -240,12 +240,10 @@ def tournament(env, num):
             hole_cards.append(tmp)
         deck = generate_deck(hole_cards, given_board)
         tie, win, lose = run_simulation(hole_cards, 1000, False, given_board, deck, False)
-        ev[0] += tie * float(sum(env.get_perfect_information()['chips']))/2.0 +\
-                win * float(sum(env.get_perfect_information()['chips']) - env.get_perfect_information()['chips'])[0]) -\
-                lose * env.get_perfect_information()['chips'][0]
-        ev[1] += tie * float(sum(env.get_perfect_information()['chips']))/2.0 +\
-                lose * float(sum(env.get_perfect_information()['chips'] - env.get_perfect_information()['chips'])[1])) -\
-                win * env.get_perfect_information()['chips'][1]
+        ev[0] += tie * (float(sum(env.get_perfect_information()['chips']))/2.0 - float(env.get_perfect_information()['chips'][0]))+\
+                win * float(sum(env.get_perfect_information()['chips']) - env.get_perfect_information()['chips'][0])
+        ev[1] += tie * (float(sum(env.get_perfect_information()['chips']))/2.0 - float(env.get_perfect_information()['chips'][1])) +\
+                lose * float(sum(env.get_perfect_information()['chips']) - env.get_perfect_information()['chips'][1])
     
     for i, _ in enumerate(payoffs):
         payoffs[i] /= counter

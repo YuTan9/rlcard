@@ -17,7 +17,6 @@ from datetime import datetime
 from copy import deepcopy
 
 def train(args):
-    
     # Check whether gpu is available
     device = get_device()
     args.log_dir += datetime.now().strftime('-%d-%H_%M_%S')
@@ -69,7 +68,7 @@ def train(args):
 
             # Generate data from the environment
             trajectories, payoffs = env.run(is_training=True)
-
+            
             # Reorganaize the data to be state, action, reward, next_state, done
             trajectories = reorganize(trajectories, payoffs)
 
@@ -107,6 +106,11 @@ def train(args):
     plt.xlabel('Episode')
     plt.ylabel('Chips')
     plt.legend(loc="upper left")
+    title = ''
+    if(args.progressive_train):
+        title += 'Progressive train '
+    title += ' '.join(args.mlp_shape)
+    plt.title(title)
     plt.grid()
     plt.savefig(os.path.join(args.log_dir, 'fig-{}.png'.format(datetime.now().strftime("%d-%H_%M_%S"))))
 

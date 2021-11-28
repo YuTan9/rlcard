@@ -135,7 +135,6 @@ class Env(object):
         '''
         trajectories = [[] for _ in range(self.num_players)]
         state, player_id = self.reset()
-
         # Loop to play the game
         trajectories[player_id].append(state)
         while not self.is_over():

@@ -26,12 +26,12 @@ class NolimitholdemEnv(Env):
         self.game = Game()
         super().__init__(config)
         self.actions = Action
-        self.state_shape = [[54] for _ in range(self.num_players)]
+        self.state_shape = [[9] for _ in range(self.num_players)]
         self.action_shape = [None for _ in range(self.num_players)]
         # for raise_amount in range(1, self.game.init_chips+1):
         #     self.actions.append(raise_amount)
 
-        with open(os.path.join(rlcard.__path__[0], 'games/limitholdem/card2index.json'), 'r') as file:
+        with open(os.path.join(rlcard.__path__[0], 'games/nolimitholdem/card2index.json'), 'r') as file:
             self.card2index = json.load(file)
 
     def _get_legal_actions(self):
@@ -62,13 +62,26 @@ class NolimitholdemEnv(Env):
         hand = state['hand']
         my_chips = state['my_chips']
         all_chips = state['all_chips']
-        cards = public_cards + hand
-        idx = [self.card2index[card] for card in cards]
-        obs = np.zeros(54)
-        obs[idx] = 1
-        obs[52] = float(my_chips)
-        obs[53] = float(max(all_chips))
-        extracted_state['obs'] = obs
+        # change obs from onehot vector with length 54 to array with length 9
+        # where first two elements are player's hand, following five known or unknown public cards and also player's chips and opponent's chips
+        obs = []
+        for card in hand:
+            obs.append(self.card2index[card])
+        until_river = 5 - len(public_cards)
+        for _ in range(until_river):
+            public_cards.append('??')
+        for card in public_cards:
+            obs.append(self.card2index[card])
+        obs.append(float(my_chips))
+        obs.append(float(max(all_chips)))
+        # ---
+        # cards = public_cards + hand
+        # idx = [self.card2index[card] for card in cards]
+        # obs = np.zeros(54)
+        # obs[idx] = 1
+        # obs[52] = float(my_chips)
+        # obs[53] = float(max(all_chips))
+        extracted_state['obs'] = np.array(obs, dtype = int)
 
         extracted_state['raw_obs'] = state
         extracted_state['raw_legal_actions'] = [a for a in state['legal_actions']]

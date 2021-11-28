@@ -177,7 +177,7 @@ class DQNAgent(object):
         Returns:
             q_values (numpy.array): a 1-d array where each entry represents a Q value
         '''
-        
+        # print(np.expand_dims(state['obs'], 0))
         q_values = self.q_estimator.predict_nograd(np.expand_dims(state['obs'], 0))[0]
         masked_q_values = -np.inf * np.ones(self.num_actions, dtype=float)
         legal_actions = list(state['legal_actions'].keys())
