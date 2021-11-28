@@ -1,6 +1,9 @@
 import numpy as np
 
 from rlcard.games.base import Card
+from equity.holdem_calc import run_simulation
+from equity.holdem_functions import generate_deck
+from equity.holdem_functions import Card as EquityCard
 
 def set_seed(seed):
     if seed is not None:
@@ -205,9 +208,10 @@ def tournament(env, num):
         A list of avrage payoffs for each player
     '''
     payoffs = [0 for _ in range(env.num_players)]
+    ev = [0 for _ in range(env.num_players)]
     counter = 0
     while counter < num:
-        _, _payoffs = env.run(is_training=False)
+        trajectories, _payoffs = env.run(is_training=False)
         if isinstance(_payoffs, list):
             for _p in _payoffs:
                 for i, _ in enumerate(payoffs):
@@ -217,9 +221,37 @@ def tournament(env, num):
             for i, _ in enumerate(payoffs):
                 payoffs[i] += _payoffs[i]
             counter += 1
+        # Since we only run 2 player games, this implementation is only for 2 players
+        given_board, hole_cards = [], []
+        deck = generate_deck(hole_cards, given_board)
+        # print(_payoffs)
+        # print(trajectories)
+        # print(env.get_perfect_information())
+        # print('\n\n\n')
+        if(env.get_perfect_information()['public_card'] == None):
+            given_board = None
+        else:
+            for card in env.get_perfect_information()['public_card']:
+                given_board.append(EquityCard(card[1] + card[0].lower()))
+        for player_hand in env.get_perfect_information()['hand_cards']:
+            tmp = []
+            for card in player_hand:
+                tmp.append(EquityCard(card[1] + card[0].lower()))
+            hole_cards.append(tmp)
+        deck = generate_deck(hole_cards, given_board)
+        tie, win, lose = run_simulation(hole_cards, 1000, False, given_board, deck, False)
+        ev[0] += tie * float(sum(env.get_perfect_information()['chips']))/2.0 +\
+                win * float(sum(env.get_perfect_information()['chips'])) -\
+                lose * env.get_perfect_information()['chips'][0]
+        ev[1] += tie * float(sum(env.get_perfect_information()['chips']))/2.0 +\
+                lose * float(sum(env.get_perfect_information()['chips'])) -\
+                win * env.get_perfect_information()['chips'][1]
+    
     for i, _ in enumerate(payoffs):
         payoffs[i] /= counter
-    return payoffs
+    ev[0] /= counter
+    ev[1] /= counter
+    return payoffs, ev
 
 def plot_curve(csv_path, save_path, algorithm):
     ''' Read data from csv file and plot the results

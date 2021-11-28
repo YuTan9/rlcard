@@ -1,7 +1,7 @@
 import multiprocessing
 import time
-import holdem_argparser
-import holdem_functions
+import equity.holdem_argparser
+import equity.holdem_functions
 
 
 def main():

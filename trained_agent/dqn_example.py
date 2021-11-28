@@ -81,29 +81,38 @@ def train(args):
 
             # Evaluate the performance. Play with random agents.
             if episode % args.evaluate_every == 0:
-                score = tournament(env, args.num_games)[0]
-                logger.log_performance(episode, score)
-                rounds.append(score)
-                score_queue_size, stable_range = 5, 3.0
-                if(len(rounds) > score_queue_size):
-                    rounds.pop(0)
-                if(max(rounds) - min(rounds) < stable_range and len(rounds) == score_queue_size and episode - switched[-1] > args.evaluate_every * 10):
-                    env.set_agents([agent, deepcopy(agent)])
-                    switched.append(episode)
+                reward, ev = tournament(env, args.num_games)
+                reward = reward[0]
+                ev = ev[0]
+                logger.log_performance(episode, reward, ev)
+                if(args.progressive_train):
+                    rounds.append(reward)
+                    score_queue_size, stable_range = 5, 5.0
+                    if(len(rounds) > score_queue_size):
+                        rounds.pop(0)
+                    if(max(rounds) - min(rounds) < stable_range and len(rounds) == score_queue_size and episode - switched[-1] > args.evaluate_every * 10):
+                        env.set_agents([agent, deepcopy(agent)])
+                        switched.append(episode)
 
-
-        # Plot the learning curve
-    plt.figure(figsize = (30, 10))
+    switched.pop(0)
+    # Plot the learning curve
+    plt.figure(figsize = (20, 10))
     df = pd.read_csv(os.path.join(args.log_dir, 'performance.csv'))
-    plt.plot(df['timestep'], df['reward'])
+    plt.plot(df['timestep'], df['reward'], label = 'reward', color = 'g')
+    plt.plot(df['timestep'], df['ev'], label = 'ev', color = 'r')
+    switch_plot_x, switch_plot_y = switched, []
+    for ep in switch_plot_x:
+        switch_plot_y.append(df[df['timestep'] == ep]['reward'].values[0])
+    plt.scatter(switch_plot_x, switch_plot_y)
     plt.xlabel('Episode')
-    plt.ylabel('Reward')
+    plt.ylabel('Chips')
+    plt.legend(loc="upper left")
+    plt.grid()
     plt.savefig(os.path.join(args.log_dir, 'fig-{}.png'.format(datetime.now().strftime("%d-%H_%M_%S"))))
 
     # Save model
     torch.save(agent, save_path)
     print('Model saved in', save_path)
-    switched.pop(0)
     with open(os.path.join(args.log_dir, 'config.txt'), 'w') as f:
         for arg in vars(args):
             f.write('{}: {}\n'.format(arg, getattr(args, arg)))
@@ -165,12 +174,13 @@ if __name__ == '__main__':
     parser.add_argument('--num_games', type=int, default=2000) # during evaluation (tournament function), how many times to simulate
     parser.add_argument('--evaluate_every', type=int, default=100)
     parser.add_argument('--log_dir', type=str, default='log/nl_holdem_dqn')
-    parser.add_argument('--init', type=bool, default=False)
-    parser.add_argument('--play', type=bool, default=False)
     parser.add_argument('--epsilon_decay_steps', type=float, default=0.5)
     parser.add_argument('--update_target_estimator_every', type=int, default=5000)
     parser.add_argument('--mlp_shape', nargs = '+', type = int, default=[128])
     parser.add_argument('--villan', type=str, default='fish')
+    parser.add_argument('--progressive_train', type=int, default=0)
+    parser.add_argument('--init', type=int, default=1)
+    parser.add_argument('--play', type=int, default=0)
 
 
     args = parser.parse_args()
